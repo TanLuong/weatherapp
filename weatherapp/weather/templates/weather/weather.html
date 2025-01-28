@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        .search-bar input {
+            padding: 10px;
+            font-size: 1rem;
+            width: 250px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+        }
+        .current-weather {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 40px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            overflow: hidden;
+        }
+        .current-weather .left, .current-weather .right {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+        }
+        .current-weather .left {
+            flex-basis: 40%;
+            border-right: 1px solid #ddd;
+        }
+        .current-weather h2 {
+            font-size: 2.5rem;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .current-weather h3 {
+            font-size: 1.5rem;
+            color: #555;
+            margin: 5px 0;
+        }
+        .current-weather img {
+            width: 120px;
+            height: 120px;
+            margin: 20px 0;
+        }
+        .current-weather .right h2 {
+            font-size: 1.75rem;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .current-weather .right h3 {
+            font-size: 1.5rem;
+            color: #777;
+        }
+        .current-weather .right p {
+            font-size: 1rem;
+            color: #555;
+            margin-top: 15px;
+        }
+
+        /* Add some responsiveness */
+        @media (max-width: 768px) {
+            .current-weather {
+                flex-direction: column;
+                align-items: center;
+            }
+            .current-weather .left {
+                border-right: none;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Add button styling */
+        .add-to-history-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Button hover effect */
+        .add-to-history-btn:hover {
+            background-color: #45a049;
+        }
+
+        .auth-links {
+            font-size: 1.1rem;
+        }
+        .auth-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 15px;
+        }
+        .auth-links a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Nhat Tan - <a href="https://www.linkedin.com/school/pmaccelerator/">PM Accelerator</a></h1>
+            <div class="search-bar">
+                <form method="get">
+                    <input type="text" name="city" placeholder="Enter city" value="{{ city }}">
+                    <button type="submit" style="padding: 10px 20px; background-color: #333; color: white; border: none; border-radius: 4px;">Search</button>
+                </form>
+            </div>
+            <div class="auth-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'weather_list' %}">List</a>
+                    <a href="{% url 'custom_logout' %}">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}">Login</a>
+                    <a href="{% url 'register' %}">Register</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Current weather -->
+        <div class="current-weather">
+            <div class="left">
+                <h2>{{ current_date|date:"l, F j, Y" }}</h2>
+                <h3>{{ location }}</h3>
+                <img src="{{ weather.weather_icons|first }}" class="weather-icon" alt="weather icon">
+                <h3>{{ weather.temperature }}°C</h3>
+                <p>{{ weather.weather_descriptions }}</p>
+            </div>
+            <div class="right">
+                <h2>Feels like</h2>
+                <h3>{{ weather.feelslike }}°C</h3>
+                <h2>Humidity</h2>
+                <h3>{{ weather.humidity }}%</h3>
+                <h2>Wind</h2>
+                <h3>{{ weather.wind_speed }} km/h</h3>
+            </div>
+        </div>
+
+        <!-- Add to History Button, only visible for logged-in users -->
+        {% if user.is_authenticated %}
+        <form id='add-history' method="post" action="{% url 'add_to_history' %}">
+            {% csrf_token %}
+            <input type="hidden" name="location" value="{{ location }}">
+            <input type="hidden" name="temperature" value="{{ weather.temperature }}">
+            <input type="hidden" name="humidity" value="{{ weather.humidity }}">
+            <input type="hidden" name="wind_speed" value="{{ weather.wind_speed }}">
+            <input type="hidden" name="weather_icon" value="{{ weather.weather_icons|first }}">
+            <input type="hidden" name="feels_like" value="{{ weather.feelslike }}">
+            <input type="hidden" name="weather_descriptions" value="{{ weather.weather_descriptions }}">
+        </form>
+        <div style="text-align: center; margin-top: 40px;">
+            <button type="submit" class="add-to-history-btn">Add to History</button>
+        </div>
+        
+        {% endif %}
+
+        <div id="successMessage" style="display: none; text-align: center; margin-top: 20px;">
+            <p style="background-color: #4CAF50; color: white; padding: 10px; border-radius: 5px;"></p>
+        </div>
+    </div>
+    <script>
+        // JavaScript to handle AJAX form submission
+        document.querySelector('.add-to-history-btn').addEventListener('click', function() {
+            var form = document.getElementById('add-history');
+            var formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+                }
+            })
+            .then(response => response.json()) // Assuming server responds with JSON
+            .then(data => {
+                // Show success message
+                var message_block = document.getElementById('successMessage');
+                message_block.style.display = 'block';
+                var message = message_block.querySelector('p');
+                message.textContent = data.message;
+                setTimeout(function() {
+                    message_block.style.display = 'none';
+                }, 3000); // Hide message after 3 seconds
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
